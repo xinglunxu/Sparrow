@@ -9,21 +9,4 @@
 #include "World.hpp"
 #include <unistd.h>
 
-const int interval = 1000000;
 
-World::World(){
-    systems = list<System*>();
-}
-
-void World::Run(){
-    while(true){
-        Update();
-        usleep(interval);
-    }
-}
-
-void World::Update(){
-    for(auto it = systems.begin(); it!=systems.end();it++){
-        (*it)->Update();
-    }
-}

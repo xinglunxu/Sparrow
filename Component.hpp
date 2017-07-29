@@ -11,20 +11,17 @@
 
 #include <stdio.h>
 
-class ComponentCounter{
-struct:
+struct ComponentCounter{
     static int counter;
 };
 
 int ComponentCounter::counter = 0;
 
-template <typename Data>
 struct Component{
 private:
     static int bitIndex;
 };
 
-template <typename Data>
-int Component<Data>::bitIndex = ComponentCounter::counter++;
+int Component::bitIndex = ComponentCounter::counter++;
 
 #endif /* Component_hpp */

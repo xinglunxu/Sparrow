@@ -14,15 +14,39 @@
 
 using namespace std;
 
+template <typename ComponentList, typename SystemList>
+class World;
+
 template <typename DataType>
 class ComponentManager{
 private:
-    unordered_map<int, unordered_map<int, DataType>> datas;
+    unordered_map<int, unordered_map<int, DataType>*> datas;
+    void AddWorld(int worldId);
     ComponentManager();
+    
+    template <typename ComponentList, typename SystemList>
+    friend class World;
 public:
     static ComponentManager inst;
 };
 
+
+
+
+
+
+template <typename T>
+ComponentManager<T> ComponentManager<T>::inst = ComponentManager<T>();
+
+template <typename T>
+ComponentManager<T>::ComponentManager(){
+    datas = unordered_map<int, unordered_map<int, T>*>();
+}
+
+template <typename T>
+void ComponentManager<T>::AddWorld(int worldId){
+    datas[worldId] = new unordered_map<int, T>();
+}
 
 
 #endif /* ComponentManager_hpp */
