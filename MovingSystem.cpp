@@ -9,5 +9,5 @@
 #include "MovingSystem.hpp"
 
 void MovingSystem::Update(){
-    std::cout<<"MovingS update called"<<std::endl;
+    std::cout<<"TestS update called"<<std::endl;
 }

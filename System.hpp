@@ -10,12 +10,15 @@
 #define System_hpp
 
 #include <stdio.h>
+#include "World.hpp"
 
 using namespace std;
 
 class System{
 public:
     virtual void Update()=0;
+protected:
+//    World w;
 };
 
 

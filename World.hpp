@@ -20,6 +20,7 @@
 
 using namespace std;
 
+class System;
 
 //declare
 template <typename ComponentList, typename SystemList>
@@ -27,8 +28,8 @@ class World{
 public:
     void Run();
     World();
-    template <typename T>
-    void AddSystem();
+//    template <typename T>
+//    void AddSystem();
     
 private:
     void Update();
@@ -36,14 +37,18 @@ private:
     
     template <typename T>
     void AddComponent();
-    
     template <typename T, typename ...TS>
     void _AddComponent(typename enable_if<sizeof...(TS)!=0, int>::type i=0);
-    
     template <typename T>
     void _AddComponent();
     
+    template <typename T>
     void AddSystem();
+    template <typename T, typename ...TS>
+    void _AddSystem(typename enable_if<sizeof...(TS)!=0, int>::type i=0);
+    template <typename T>
+    void _AddSystem();
+    
     
     template <typename T>
     struct TypeExpander{
@@ -53,8 +58,8 @@ private:
     template <typename ... TS>
     struct TypeExpander<TypeList<TS...>>{
     public:
-        void AddComponent(World w);
-        void AddSystem(World w);
+        void AddComponent(World &w);
+        void AddSystem(World &w);
     };
     
     struct IdAllocator{
@@ -80,6 +85,8 @@ private:
 template <typename ComponentList, typename SystemList>
 int World<ComponentList,SystemList>::IdAllocator::nextId = 0;
 
+
+// add components begin
 template <typename ComponentList, typename SystemList>
 template <typename T, typename ...TS>
 void World<ComponentList,SystemList>::_AddComponent(typename enable_if<sizeof...(TS)!=0, int>::type i){
@@ -96,22 +103,47 @@ void World<ComponentList,SystemList>::_AddComponent(){
 
 template <typename ComponentList, typename SystemList>
 template <typename ... TS>
-void World<ComponentList,SystemList>::TypeExpander<TypeList<TS...>>::AddComponent(World w){
+void World<ComponentList,SystemList>::TypeExpander<TypeList<TS...>>::AddComponent(World &w){
     w._AddComponent<TS...>();
 }
 
 template <typename ComponentList, typename SystemList>
+template <typename T>
+void World<ComponentList,SystemList>::AddComponent(){
+    ComponentManager<T>::inst.AddWorld(id);
+}
+//add component end
+
+
+//add system begin
+template <typename ComponentList, typename SystemList>
 template <typename ... TS>
-void World<ComponentList,SystemList>::TypeExpander<TypeList<TS...>>::AddSystem(World w){
-    
+void World<ComponentList,SystemList>::TypeExpander<TypeList<TS...>>::AddSystem(World &w){
+    w._AddSystem<TS...>();
+}
+
+template <typename ComponentList, typename SystemList>
+template <typename T, typename ...TS>
+void World<ComponentList,SystemList>::_AddSystem(typename enable_if<sizeof...(TS)!=0, int>::type i){
+    AddSystem<T>();
+    _AddSystem<TS...>();
+}
+
+template <typename ComponentList, typename SystemList>
+template <typename T>
+void World<ComponentList,SystemList>::_AddSystem(){
+    AddSystem<T>();
 }
 
 
 template <typename ComponentList, typename SystemList>
 template <typename T>
 void World<ComponentList,SystemList>::AddSystem(){
+//    cout<<"system count: "<<systems.size()<<endl;
     systems.insert(systems.end(), new T());
+//    cout<<"system count: "<<systems.size()<<endl;
 }
+//add system end
 
 const int interval = 1000000;
 
@@ -122,6 +154,9 @@ World<ComponentList, SystemList>::World(){
     
     struct TypeExpander<ComponentList> ComponentExpander;
     ComponentExpander.AddComponent(*this);
+    
+    struct TypeExpander<SystemList> SystemExpander;
+    SystemExpander.AddSystem(*this);
     
 }
 
@@ -135,15 +170,10 @@ void World<ComponentList, SystemList>::Run(){
 
 template <typename ComponentList, typename SystemList>
 void World<ComponentList, SystemList>::Update(){
+//    cout<<"system count: "<<systems.size()<<endl;
     for(auto it = systems.begin(); it!=systems.end();it++){
         (*it)->Update();
     }
-}
-
-template <typename ComponentList, typename SystemList>
-template <typename T>
-void World<ComponentList,SystemList>::AddComponent(){
-    ComponentManager<T>::inst.AddWorld(id);
 }
 
 #endif /* World_hpp */

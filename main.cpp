@@ -12,12 +12,12 @@
 #include "MovingSystem.hpp"
 #include "TypeList.hpp"
 #include "PositionComponent.hpp"
+#include "TestSystem.hpp"
 
 int main(int argc, const char * argv[]) {
     typedef TypeList<PositionComponent> ComponentList;
-    typedef TypeList<int, float> SystemList;
+    typedef TypeList<MovingSystem,TestSystem> SystemList;
     World<ComponentList, SystemList> world = World<ComponentList, SystemList>();
-    world.AddSystem<MovingSystem>();
     world.Run();
     
     
