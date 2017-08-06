@@ -24,6 +24,10 @@ private:
     void AddWorld(int worldId);
     ComponentManager();
     
+    
+    bool Contain(int i);
+    void AddComponent(int i);
+    
     template <typename ComponentList, typename SystemList>
     friend class World;
 public:
@@ -32,7 +36,20 @@ public:
 
 
 
+template <typename T>
+bool ComponentManager<T>::Contain(int i){
+    return datas.find(i) != datas.end();
+}
 
+template <typename T>
+void ComponentManager<T>::AddComponent(int i){
+    if(!Contain(i)){
+        datas[i] = new T();
+    }
+    else{
+        std::cout<<"Added two same components for the same entity"<<std::endl;
+    }
+}
 
 
 template <typename T>

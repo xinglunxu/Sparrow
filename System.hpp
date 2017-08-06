@@ -17,6 +17,7 @@ using namespace std;
 class System{
 public:
     virtual void Update()=0;
+    int worldId;
 protected:
 //    World w;
 };

@@ -17,6 +17,7 @@
 #include "TypeList.hpp"
 #include <typeinfo>
 #include "ComponentManager.hpp"
+#include "IdAllocator.hpp"
 
 using namespace std;
 
@@ -28,12 +29,13 @@ class World{
 public:
     void Run();
     World();
-//    template <typename T>
-//    void AddSystem();
+    template<typename EntityComponentList>
+    int CreateEntity();
     
 private:
     void Update();
     list<System*> systems;
+    IdAllocator idAllocator;
     
     template <typename T>
     void AddComponent();
@@ -50,6 +52,14 @@ private:
     void _AddSystem();
     
     
+    template <typename T, typename ... TSS>
+    void _ParseEntityComponent(int EntityId,typename enable_if<sizeof...(TSS)!=0, int>::type i=0);
+    template <typename T>
+    void _ParseEntityComponent(int EntityId);
+    template <typename T>
+    void __ParseEntityComponent(int EntityId);
+    
+    
     template <typename T>
     struct TypeExpander{
         
@@ -60,17 +70,11 @@ private:
     public:
         void AddComponent(World &w);
         void AddSystem(World &w);
-    };
+        
+        void ParseEntityComponent(int EntityId,World &w);
+        };
     
-    struct IdAllocator{
-    public:
-        static int GetNewId(){
-            nextId++;
-            return nextId;
-        }
-    private:
-        static int nextId;
-    };
+    static IdAllocator gl_IdAllocator;
     
     //should not be changed after init, try to define with const specifier
     int id;
@@ -83,7 +87,7 @@ private:
 //-------------------------
 
 template <typename ComponentList, typename SystemList>
-int World<ComponentList,SystemList>::IdAllocator::nextId = 0;
+IdAllocator World<ComponentList,SystemList>::gl_IdAllocator = IdAllocator();
 
 
 // add components begin
@@ -139,9 +143,9 @@ void World<ComponentList,SystemList>::_AddSystem(){
 template <typename ComponentList, typename SystemList>
 template <typename T>
 void World<ComponentList,SystemList>::AddSystem(){
-//    cout<<"system count: "<<systems.size()<<endl;
-    systems.insert(systems.end(), new T());
-//    cout<<"system count: "<<systems.size()<<endl;
+    T* t = new T();
+    t->worldId = id;
+    systems.insert(systems.end(), t);
 }
 //add system end
 
@@ -149,7 +153,8 @@ const int interval = 1000000;
 
 template <typename ComponentList, typename SystemList>
 World<ComponentList, SystemList>::World(){
-    id = IdAllocator::GetNewId();
+    idAllocator = IdAllocator();
+    id = gl_IdAllocator.GetId();
     systems = list<System*>();
     
     struct TypeExpander<ComponentList> ComponentExpander;
@@ -170,10 +175,45 @@ void World<ComponentList, SystemList>::Run(){
 
 template <typename ComponentList, typename SystemList>
 void World<ComponentList, SystemList>::Update(){
-//    cout<<"system count: "<<systems.size()<<endl;
     for(auto it = systems.begin(); it!=systems.end();it++){
         (*it)->Update();
     }
 }
+
+
+//Entity Related Functions
+template <typename ComponentList, typename SystemList>
+template <typename EntityComponentList>
+int World<ComponentList,SystemList>::CreateEntity(){
+    int newId = idAllocator.GetId();
+    TypeExpander<EntityComponentList> EntityComponentExpander;
+    EntityComponentExpander.ParseEntityComponent(newId,*this);
+}
+
+template <typename ComponentList, typename SystemList>
+template <typename ... TS>
+void World<ComponentList,SystemList>::TypeExpander<TypeList<TS...>>::ParseEntityComponent(int EntityId, World &w){
+    w._ParseEntityComponent<TS...>(EntityId);
+}
+
+template <typename ComponentList, typename SystemList>
+template <typename T, typename ...TS>
+void World<ComponentList,SystemList>::_ParseEntityComponent(int EntityId,typename enable_if<sizeof...(TS)!=0, int>::type i){
+    __ParseEntityComponent(EntityId);
+    _ParseEntityComponent<TS...>(EntityId);
+}
+
+template <typename ComponentList, typename SystemList>
+template <typename T>
+void World<ComponentList,SystemList>::_ParseEntityComponent(int EntityId){
+    __ParseEntityComponent(EntityId);
+}
+
+template <typename ComponentList, typename SystemList>
+template <typename T>
+void World<ComponentList,SystemList>::__ParseEntityComponent(int EntityId){
+    ComponentManager<T>::inst.AddComponent(EntityId);
+}
+
 
 #endif /* World_hpp */
