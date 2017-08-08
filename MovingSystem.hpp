@@ -15,7 +15,7 @@
 
 class MovingSystem: public EntityComponentSystem<int>{
 public:
-    void Update() override;
+    void Update(int entityId) override;
 };
 
 #endif /* MovingSystem_hpp */

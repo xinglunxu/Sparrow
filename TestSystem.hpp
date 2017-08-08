@@ -14,7 +14,7 @@
 
 class TestSystem : public EntityComponentSystem<TestSystem>{
 public:
-    void Update() override;
+    void Update(int entityId) override;
 };
 
 #endif /* TestSystem_hpp */

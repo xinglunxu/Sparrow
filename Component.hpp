@@ -11,17 +11,9 @@
 
 #include <stdio.h>
 
-struct ComponentCounter{
-    static int counter;
-};
-
-int ComponentCounter::counter = 0;
-
 struct Component{
-private:
+public:
     static int bitIndex;
 };
-
-int Component::bitIndex = ComponentCounter::counter++;
 
 #endif /* Component_hpp */

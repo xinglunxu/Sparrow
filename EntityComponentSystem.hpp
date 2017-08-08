@@ -15,7 +15,7 @@
 template<typename ... ComponentTypes>
 class EntityComponentSystem :public System{
 public:
-    virtual void Update()=0;
+    virtual void Update(int entityId)=0;
 };
 
 #endif /* EntityComponentSystem_hpp */

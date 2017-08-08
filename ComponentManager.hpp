@@ -11,6 +11,7 @@
 
 #include <stdio.h>
 #include <unordered_map>
+#include "ComponentCounter.hpp"
 
 using namespace std;
 
@@ -20,31 +21,32 @@ class World;
 template <typename DataType>
 class ComponentManager{
 private:
-    unordered_map<int, unordered_map<int, DataType>*> datas;
+    unordered_map<int, unordered_map<int, DataType*>*> datas;
     void AddWorld(int worldId);
     ComponentManager();
     
     
-    bool Contain(int i);
-    void AddComponent(int i);
+    bool Contain(int worldId, int i);
+    void AddComponent(int worldId, int i);
     
     template <typename ComponentList, typename SystemList>
     friend class World;
 public:
     static ComponentManager inst;
+    int bitSetIndex;
 };
 
-
-
 template <typename T>
-bool ComponentManager<T>::Contain(int i){
-    return datas.find(i) != datas.end();
+bool ComponentManager<T>::Contain(int worldId, int i){
+    unordered_map<int, T*>* worldDatas = datas[worldId];
+    return worldDatas->find(i) != worldDatas->end();
 }
 
 template <typename T>
-void ComponentManager<T>::AddComponent(int i){
-    if(!Contain(i)){
-        datas[i] = new T();
+void ComponentManager<T>::AddComponent(int worldId,int i){
+    unordered_map<int, T*>* worldDatas = datas[worldId];
+    if(!Contain(worldId, i)){
+        (*worldDatas)[i] = new T();
     }
     else{
         std::cout<<"Added two same components for the same entity"<<std::endl;
@@ -57,12 +59,15 @@ ComponentManager<T> ComponentManager<T>::inst = ComponentManager<T>();
 
 template <typename T>
 ComponentManager<T>::ComponentManager(){
-    datas = unordered_map<int, unordered_map<int, T>*>();
+    bitSetIndex = ComponentCounter::counter;
+//    cout<<ComponentCounter::counter<<endl;
+    ComponentCounter::counter++;
+    datas = unordered_map<int, unordered_map<int, T*>*>();
 }
 
 template <typename T>
 void ComponentManager<T>::AddWorld(int worldId){
-    datas[worldId] = new unordered_map<int, T>();
+    datas[worldId] = new unordered_map<int, T*>();
 }
 
 

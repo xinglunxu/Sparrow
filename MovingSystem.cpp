@@ -8,6 +8,6 @@
 
 #include "MovingSystem.hpp"
 
-void MovingSystem::Update(){
+void MovingSystem::Update(int entityId){
     std::cout<<"TestS update called"<<std::endl;
 }

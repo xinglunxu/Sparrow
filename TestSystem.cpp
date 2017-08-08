@@ -8,6 +8,6 @@
 
 #include "TestSystem.hpp"
 
-void TestSystem::Update(){
+void TestSystem::Update(int entityId){
     std::cout<<"TestSystem update called"<<std::endl;
 }

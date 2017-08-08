@@ -18,6 +18,8 @@
 #include <typeinfo>
 #include "ComponentManager.hpp"
 #include "IdAllocator.hpp"
+#include <unordered_set>
+#include "BitSetGetter.hpp"
 
 using namespace std;
 
@@ -36,6 +38,7 @@ private:
     void Update();
     list<System*> systems;
     IdAllocator idAllocator;
+    unordered_set<int> entityIds;
     
     template <typename T>
     void AddComponent();
@@ -72,7 +75,7 @@ private:
         void AddSystem(World &w);
         
         void ParseEntityComponent(int EntityId,World &w);
-        };
+    };
     
     static IdAllocator gl_IdAllocator;
     
@@ -156,6 +159,7 @@ World<ComponentList, SystemList>::World(){
     idAllocator = IdAllocator();
     id = gl_IdAllocator.GetId();
     systems = list<System*>();
+    entityIds = unordered_set<int>();
     
     struct TypeExpander<ComponentList> ComponentExpander;
     ComponentExpander.AddComponent(*this);
@@ -175,9 +179,9 @@ void World<ComponentList, SystemList>::Run(){
 
 template <typename ComponentList, typename SystemList>
 void World<ComponentList, SystemList>::Update(){
-    for(auto it = systems.begin(); it!=systems.end();it++){
-        (*it)->Update();
-    }
+//    for(auto it = systems.begin(); it!=systems.end();it++){
+//        (*it)->Update();
+//    }
 }
 
 
@@ -188,6 +192,7 @@ int World<ComponentList,SystemList>::CreateEntity(){
     int newId = idAllocator.GetId();
     TypeExpander<EntityComponentList> EntityComponentExpander;
     EntityComponentExpander.ParseEntityComponent(newId,*this);
+    return newId;
 }
 
 template <typename ComponentList, typename SystemList>
@@ -199,20 +204,20 @@ void World<ComponentList,SystemList>::TypeExpander<TypeList<TS...>>::ParseEntity
 template <typename ComponentList, typename SystemList>
 template <typename T, typename ...TS>
 void World<ComponentList,SystemList>::_ParseEntityComponent(int EntityId,typename enable_if<sizeof...(TS)!=0, int>::type i){
-    __ParseEntityComponent(EntityId);
+    __ParseEntityComponent<T>(EntityId);
     _ParseEntityComponent<TS...>(EntityId);
 }
 
 template <typename ComponentList, typename SystemList>
 template <typename T>
 void World<ComponentList,SystemList>::_ParseEntityComponent(int EntityId){
-    __ParseEntityComponent(EntityId);
+    __ParseEntityComponent<T>(EntityId);
 }
 
 template <typename ComponentList, typename SystemList>
 template <typename T>
 void World<ComponentList,SystemList>::__ParseEntityComponent(int EntityId){
-    ComponentManager<T>::inst.AddComponent(EntityId);
+    ComponentManager<T>::inst.AddComponent(id, EntityId);
 }
 
 
