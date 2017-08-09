@@ -31,11 +31,11 @@ template <typename ComponentList, typename SystemList>
 class World{
 public:
     void Run();
-    World();
     template<typename EntityComponentList>
     int CreateEntity();
     
 private:
+    World();
     void Update();
     list<System*> systems;
     IdAllocator idAllocator;
@@ -83,7 +83,8 @@ private:
     //should not be changed after init, try to define with const specifier
     int id;
     
-//    BitSetGetter<ComponentCounter::counter> bsg;
+    template<typename ComponentTypeList>
+    friend class Universe;
 };
 
 
