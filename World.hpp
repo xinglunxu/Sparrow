@@ -20,6 +20,7 @@
 #include "IdAllocator.hpp"
 #include <unordered_set>
 #include "BitSetGetter.hpp"
+#include "ComponentCounter.hpp"
 
 using namespace std;
 
@@ -81,6 +82,8 @@ private:
     
     //should not be changed after init, try to define with const specifier
     int id;
+    
+//    BitSetGetter<ComponentCounter::counter> bsg;
 };
 
 
