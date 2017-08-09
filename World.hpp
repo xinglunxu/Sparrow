@@ -27,7 +27,7 @@ using namespace std;
 class System;
 
 //declare
-template <typename ComponentList, typename SystemList>
+template <typename SystemList>
 class World{
 public:
     void Run();
@@ -84,34 +84,34 @@ private:
 // imp
 //-------------------------
 
-template <typename ComponentList, typename SystemList>
-IdAllocator World<ComponentList,SystemList>::gl_IdAllocator = IdAllocator();
+template <typename SystemList>
+IdAllocator World<SystemList>::gl_IdAllocator = IdAllocator();
 
 
 //add system begin
-template <typename ComponentList, typename SystemList>
+template <typename SystemList>
 template <typename ... TS>
-void World<ComponentList,SystemList>::TypeExpander<TypeList<TS...>>::AddSystem(World &w){
+void World<SystemList>::TypeExpander<TypeList<TS...>>::AddSystem(World &w){
     w._AddSystem<TS...>();
 }
 
-template <typename ComponentList, typename SystemList>
+template <typename SystemList>
 template <typename T, typename ...TS>
-void World<ComponentList,SystemList>::_AddSystem(typename enable_if<sizeof...(TS)!=0, int>::type i){
+void World<SystemList>::_AddSystem(typename enable_if<sizeof...(TS)!=0, int>::type i){
     AddSystem<T>();
     _AddSystem<TS...>();
 }
 
-template <typename ComponentList, typename SystemList>
+template <typename SystemList>
 template <typename T>
-void World<ComponentList,SystemList>::_AddSystem(){
+void World<SystemList>::_AddSystem(){
     AddSystem<T>();
 }
 
 
-template <typename ComponentList, typename SystemList>
+template <typename SystemList>
 template <typename T>
-void World<ComponentList,SystemList>::AddSystem(){
+void World<SystemList>::AddSystem(){
     T* t = new T();
     t->worldId = id;
     systems.insert(systems.end(), t);
@@ -120,8 +120,8 @@ void World<ComponentList,SystemList>::AddSystem(){
 
 const int interval = 1000000;
 
-template <typename ComponentList, typename SystemList>
-World<ComponentList, SystemList>::World(){
+template < typename SystemList>
+World<SystemList>::World(){
     idAllocator = IdAllocator();
     id = gl_IdAllocator.GetId();
     systems = list<System*>();
@@ -135,16 +135,16 @@ World<ComponentList, SystemList>::World(){
     
 }
 
-template <typename ComponentList, typename SystemList>
-void World<ComponentList, SystemList>::Run(){
+template <typename SystemList>
+void World<SystemList>::Run(){
     while(true){
         Update();
         usleep(interval);
     }
 }
 
-template <typename ComponentList, typename SystemList>
-void World<ComponentList, SystemList>::Update(){
+template <typename SystemList>
+void World<SystemList>::Update(){
 //    for(auto it = systems.begin(); it!=systems.end();it++){
 //        (*it)->Update();
 //    }
@@ -152,37 +152,37 @@ void World<ComponentList, SystemList>::Update(){
 
 
 //Entity Related Functions
-template <typename ComponentList, typename SystemList>
+template <typename SystemList>
 template <typename EntityComponentList>
-int World<ComponentList,SystemList>::CreateEntity(){
+int World<SystemList>::CreateEntity(){
     int newId = idAllocator.GetId();
     TypeExpander<EntityComponentList> EntityComponentExpander;
     EntityComponentExpander.ParseEntityComponent(newId,*this);
     return newId;
 }
 
-template <typename ComponentList, typename SystemList>
+template <typename SystemList>
 template <typename ... TS>
-void World<ComponentList,SystemList>::TypeExpander<TypeList<TS...>>::ParseEntityComponent(int EntityId, World &w){
+void World<SystemList>::TypeExpander<TypeList<TS...>>::ParseEntityComponent(int EntityId, World &w){
     w._ParseEntityComponent<TS...>(EntityId);
 }
 
-template <typename ComponentList, typename SystemList>
+template <typename SystemList>
 template <typename T, typename ...TS>
-void World<ComponentList,SystemList>::_ParseEntityComponent(int EntityId,typename enable_if<sizeof...(TS)!=0, int>::type i){
+void World<SystemList>::_ParseEntityComponent(int EntityId,typename enable_if<sizeof...(TS)!=0, int>::type i){
     __ParseEntityComponent<T>(EntityId);
     _ParseEntityComponent<TS...>(EntityId);
 }
 
-template <typename ComponentList, typename SystemList>
+template <typename SystemList>
 template <typename T>
-void World<ComponentList,SystemList>::_ParseEntityComponent(int EntityId){
+void World<SystemList>::_ParseEntityComponent(int EntityId){
     __ParseEntityComponent<T>(EntityId);
 }
 
-template <typename ComponentList, typename SystemList>
+template < typename SystemList>
 template <typename T>
-void World<ComponentList,SystemList>::__ParseEntityComponent(int EntityId){
+void World<SystemList>::__ParseEntityComponent(int EntityId){
     ComponentManager<T>::inst.AddComponent(id, EntityId);
 }
 

@@ -15,7 +15,7 @@
 
 using namespace std;
 
-template <typename ComponentList, typename SystemList>
+template <typename SystemList>
 class World;
 
 template <typename DataType>
@@ -29,7 +29,7 @@ private:
     bool Contain(int worldId, int i);
     void AddComponent(int worldId, int i);
     
-    template <typename ComponentList, typename SystemList>
+    template <typename SystemList>
     friend class World;
     
     friend class ComponentInitiationVisitor;

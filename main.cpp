@@ -21,7 +21,7 @@ int main(int argc, const char * argv[]) {
     typedef TypeList<PositionComponent, TestComponent> ComponentList;
     typedef TypeList<MovingSystem,TestSystem> SystemList;
     Universe<ComponentList> U = Universe<ComponentList>();
-    World<ComponentList, SystemList> world = U.CreateWorld<SystemList>();
+    World<SystemList> world = U.CreateWorld<SystemList>();
     int e1 =  world.CreateEntity<TypeList<PositionComponent>>();
     int e2 =  world.CreateEntity<TypeList<PositionComponent,TestComponent>>();
     

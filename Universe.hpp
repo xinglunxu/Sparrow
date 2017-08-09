@@ -29,15 +29,15 @@ template <typename ComponentTypeList>
 class Universe{
 public:
     template<typename SystemTypeList>
-    World<ComponentTypeList, SystemTypeList> CreateWorld();
+    World<SystemTypeList> CreateWorld();
     
     Universe();
 };
 
 template<typename ComponentTypeList>
 template<typename SystemTypeList>
-World<ComponentTypeList, SystemTypeList> Universe<ComponentTypeList>::CreateWorld(){
-    World<ComponentTypeList, SystemTypeList> W = World<ComponentTypeList, SystemTypeList>();
+World< SystemTypeList> Universe<ComponentTypeList>::CreateWorld(){
+    World<SystemTypeList> W = World<SystemTypeList>();
     ComponentInitiationVisitor::curWorldId = W.id;
     ComponentTypeList::template CumulateTypes<ComponentInitiationVisitor, int>();
     return W;
