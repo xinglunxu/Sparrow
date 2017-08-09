@@ -42,13 +42,6 @@ private:
     unordered_set<int> entityIds;
     
     template <typename T>
-    void AddComponent();
-    template <typename T, typename ...TS>
-    void _AddComponent(typename enable_if<sizeof...(TS)!=0, int>::type i=0);
-    template <typename T>
-    void _AddComponent();
-    
-    template <typename T>
     void AddSystem();
     template <typename T, typename ...TS>
     void _AddSystem(typename enable_if<sizeof...(TS)!=0, int>::type i=0);
@@ -72,9 +65,7 @@ private:
     template <typename ... TS>
     struct TypeExpander<TypeList<TS...>>{
     public:
-        void AddComponent(World &w);
         void AddSystem(World &w);
-        
         void ParseEntityComponent(int EntityId,World &w);
     };
     
@@ -95,35 +86,6 @@ private:
 
 template <typename ComponentList, typename SystemList>
 IdAllocator World<ComponentList,SystemList>::gl_IdAllocator = IdAllocator();
-
-
-// add components begin
-template <typename ComponentList, typename SystemList>
-template <typename T, typename ...TS>
-void World<ComponentList,SystemList>::_AddComponent(typename enable_if<sizeof...(TS)!=0, int>::type i){
-    AddComponent<T>();
-    _AddComponent<TS...>();
-}
-
-template <typename ComponentList, typename SystemList>
-template <typename T>
-void World<ComponentList,SystemList>::_AddComponent(){
-    AddComponent<T>();
-}
-
-
-template <typename ComponentList, typename SystemList>
-template <typename ... TS>
-void World<ComponentList,SystemList>::TypeExpander<TypeList<TS...>>::AddComponent(World &w){
-    w._AddComponent<TS...>();
-}
-
-template <typename ComponentList, typename SystemList>
-template <typename T>
-void World<ComponentList,SystemList>::AddComponent(){
-    ComponentManager<T>::inst.AddWorld(id);
-}
-//add component end
 
 
 //add system begin
@@ -165,8 +127,8 @@ World<ComponentList, SystemList>::World(){
     systems = list<System*>();
     entityIds = unordered_set<int>();
     
-    struct TypeExpander<ComponentList> ComponentExpander;
-    ComponentExpander.AddComponent(*this);
+//    struct TypeExpander<ComponentList> ComponentExpander;
+//    ComponentExpander.AddComponent(*this);
     
     struct TypeExpander<SystemList> SystemExpander;
     SystemExpander.AddSystem(*this);

@@ -7,3 +7,5 @@
 //
 
 #include "Universe.hpp"
+
+int ComponentInitiationVisitor::curWorldId = 0;

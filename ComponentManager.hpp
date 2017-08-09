@@ -31,6 +31,8 @@ private:
     
     template <typename ComponentList, typename SystemList>
     friend class World;
+    
+    friend class ComponentInitiationVisitor;
 public:
     static ComponentManager inst;
     int bitSetIndex;
