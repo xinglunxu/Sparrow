@@ -21,21 +21,22 @@
 #include <unordered_set>
 #include "BitSetGetter.hpp"
 #include "ComponentCounter.hpp"
+#include "WorldSetting.hpp"
 
 using namespace std;
 
 class System;
 
 //declare
-template <typename SystemList>
+template <typename WorldSetting>
 class World{
 public:
     void Run();
     template<typename EntityComponentList>
     int CreateEntity();
+    World();
     
 private:
-    World();
     void Update();
     list<System*> systems;
     IdAllocator idAllocator;
@@ -43,11 +44,6 @@ private:
     
     template <typename T>
     void AddSystem();
-    template <typename T, typename ...TS>
-    void _AddSystem(typename enable_if<sizeof...(TS)!=0, int>::type i=0);
-    template <typename T>
-    void _AddSystem();
-    
     
     template <typename T, typename ... TSS>
     void _ParseEntityComponent(int EntityId,typename enable_if<sizeof...(TSS)!=0, int>::type i=0);
@@ -65,7 +61,6 @@ private:
     template <typename ... TS>
     struct TypeExpander<TypeList<TS...>>{
     public:
-        void AddSystem(World &w);
         void ParseEntityComponent(int EntityId,World &w);
     };
     
@@ -76,6 +71,9 @@ private:
     
     template<typename ComponentTypeList>
     friend class Universe;
+    
+    template <typename _WorldSetting>
+    friend class SystemInitVisitor;
 };
 
 
@@ -89,33 +87,24 @@ IdAllocator World<SystemList>::gl_IdAllocator = IdAllocator();
 
 
 //add system begin
-template <typename SystemList>
-template <typename ... TS>
-void World<SystemList>::TypeExpander<TypeList<TS...>>::AddSystem(World &w){
-    w._AddSystem<TS...>();
-}
+template <typename WorldSetting>
+class SystemInitVisitor{
+public:
+    static World<WorldSetting>* w;
+    template<typename System>
+    static int Visit(){
+        System* system = new System();
+        system->worldId = w->id;
+        w->systems.insert(w->systems.end(), system);
+        return 0;
+    }
+    static int Concatenate(int a, int b){
+        return 0;
+    }
+};
 
-template <typename SystemList>
-template <typename T, typename ...TS>
-void World<SystemList>::_AddSystem(typename enable_if<sizeof...(TS)!=0, int>::type i){
-    AddSystem<T>();
-    _AddSystem<TS...>();
-}
-
-template <typename SystemList>
-template <typename T>
-void World<SystemList>::_AddSystem(){
-    AddSystem<T>();
-}
-
-
-template <typename SystemList>
-template <typename T>
-void World<SystemList>::AddSystem(){
-    T* t = new T();
-    t->worldId = id;
-    systems.insert(systems.end(), t);
-}
+template<typename WorldSetting>
+World<WorldSetting>* SystemInitVisitor<WorldSetting>::w = NULL;
 //add system end
 
 const int interval = 1000000;
@@ -127,11 +116,8 @@ World<SystemList>::World(){
     systems = list<System*>();
     entityIds = unordered_set<int>();
     
-//    struct TypeExpander<ComponentList> ComponentExpander;
-//    ComponentExpander.AddComponent(*this);
-    
-    struct TypeExpander<SystemList> SystemExpander;
-    SystemExpander.AddSystem(*this);
+    SystemInitVisitor<SystemList>::w = this;
+    SystemList::systemTypeList::template CumulateTypes<SystemInitVisitor<SystemList>,int>();
     
 }
 
