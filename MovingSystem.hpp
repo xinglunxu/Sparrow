@@ -12,8 +12,9 @@
 #include <stdio.h>
 #include "EntityComponentSystem.hpp"
 #include <iostream>
+#include "PositionComponent.hpp"
 
-class MovingSystem: public EntityComponentSystem<int>{
+class MovingSystem: public EntityComponentSystem<PositionComponent>{
 public:
     void Update(int entityId) override;
 };

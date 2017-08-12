@@ -11,9 +11,10 @@
 
 #include <stdio.h>
 
-template<typename SystemTypeList>
+template<typename SystemTypeList, typename EntitySystemTypeList>
 struct WorldSetting{
     typedef SystemTypeList systemTypeList;
+    typedef EntitySystemTypeList entitySystemTypeList;
 };
 
 

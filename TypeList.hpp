@@ -22,11 +22,16 @@ public:
     template<typename TypeVisitor, typename CumulativeType>
     constexpr static CumulativeType ConstCumulateTypes();
     
+    static constexpr int Size();
+    
 private:
     template<typename TypeVisitor, typename CumulativeType, typename T, typename ...Ts>
     static CumulativeType _CumulateTypes(typename enable_if<sizeof...(Ts)!=0, int>::type i=0);
     
     template<typename TypeVisitor, typename CumulativeType, typename T>
+    static CumulativeType _CumulateTypes();
+    
+    template<typename TypeVisitor, typename CumulativeType>
     static CumulativeType _CumulateTypes();
 };
 
@@ -48,6 +53,12 @@ CumulativeType TypeList<TS...>::_CumulateTypes(){
     return TypeVisitor::template Visit<T>();
 }
 
+template<typename ... TS>
+template<typename TypeVisitor, typename CumulativeType>
+CumulativeType TypeList<TS...>::_CumulateTypes(){
+    return CumulativeType();
+}
+
 
 
 template<typename ... TS>
@@ -55,6 +66,12 @@ template <typename TypeVisitor, typename CumulativeType>
 constexpr CumulativeType TypeList<TS...>::ConstCumulateTypes(){
     return _CumulateTypes<TypeVisitor, CumulativeType, TS...>();
 }
+
+
+template <typename ...TS>
+constexpr int TypeList<TS...>::Size(){
+    return sizeof...(TS);
+};
 
 //template programming utitly------------------------------------
 
@@ -78,12 +95,6 @@ template<typename ...TS>
 struct CombineType<TS...>{
     typedef TypeList<TS...> valueTypeList;
 };
-
-
-//template <typename T, typename ...TS>
-//struct CombineTypeIfNotRepeat{
-//    typedef std::conditional<contains<T, TS...>::value, TypeList<TS...>, typename CombineType<T, TS...>::valueTypeList> valueTypeList;
-//};
 
 template <bool b,typename T, typename ...TS>
 struct _CombineTypeIfNotRepeat{
@@ -109,7 +120,6 @@ struct CombineTypeIfNotRepeat{
 
 template <typename List, typename T>
 struct CombineTypeList{
-//    typedef TypeList<unsigned long> valueTypeList;
 };
 
 template <typename T, typename ...TS>
@@ -141,6 +151,7 @@ template <typename List, typename ...TS>
 struct Union<List, TypeList<TS...>>{
     typedef typename _Union<List, TS...>::valueTypeList valueTypeList;
 };
+
 
 
 

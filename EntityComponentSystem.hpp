@@ -15,6 +15,7 @@
 template<typename ... ComponentTypes>
 class EntityComponentSystem :public System{
 public:
+    typedef TypeList<ComponentTypes...> componentTypeList;
     virtual void Update(int entityId)=0;
 };
 

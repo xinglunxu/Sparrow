@@ -11,8 +11,10 @@
 
 #include <stdio.h>
 #include "EntityComponentSystem.hpp"
+#include "TestComponent.hpp"
+#include "PositionComponent.hpp"
 
-class TestSystem : public EntityComponentSystem<TestSystem>{
+class TestSystem : public EntityComponentSystem<TestComponent, PositionComponent>{
 public:
     void Update(int entityId) override;
 };

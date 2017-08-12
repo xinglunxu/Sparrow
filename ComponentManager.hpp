@@ -24,7 +24,7 @@ private:
     unordered_map<int, unordered_map<int, DataType*>*> datas;
     void AddWorld(int worldId);
     ComponentManager();
-    
+    unordered_map<int,int> bitSetIndex;
     
     bool Contain(int worldId, int i);
     void AddComponent(int worldId, int i);
@@ -35,7 +35,7 @@ private:
     friend class ComponentInitiationVisitor;
 public:
     static ComponentManager inst;
-    int bitSetIndex;
+//    int bitSetIndex;
 };
 
 template <typename T>
@@ -61,10 +61,11 @@ ComponentManager<T> ComponentManager<T>::inst = ComponentManager<T>();
 
 template <typename T>
 ComponentManager<T>::ComponentManager(){
-    bitSetIndex = ComponentCounter::counter;
+//    bitSetIndex = ComponentCounter::counter;
 //    cout<<ComponentCounter::counter<<endl;
     ComponentCounter::counter++;
     datas = unordered_map<int, unordered_map<int, T*>*>();
+    bitSetIndex = unordered_map<int, int>();
 }
 
 template <typename T>

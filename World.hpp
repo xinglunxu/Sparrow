@@ -22,13 +22,76 @@
 #include "BitSetGetter.hpp"
 #include "ComponentCounter.hpp"
 #include "WorldSetting.hpp"
+#include <bitset>
 
 using namespace std;
 
 class System;
 
+
+
+///template programming code
+
+template <typename ...SystemTypeList>
+struct SystemListToComponentTypeListList{
+    
+};
+
+template <typename T, typename ...TS>
+struct SystemListToComponentTypeListList<T, TS...>{
+    typedef typename Union<typename SystemListToComponentTypeListList<T>::valueTypeList, typename SystemListToComponentTypeListList<TS...>::valueTypeList>::valueTypeList valueTypeList;
+};
+
+template <typename T>
+struct SystemListToComponentTypeListList<T>{
+    typedef TypeList<typename T::componentTypeList> valueTypeList;
+};
+
+
+
+
+
+
+template <typename ...TS>
+struct _ComponentListUnion{
+    
+};
+
+template <typename T, typename U, typename ...TS>
+struct _ComponentListUnion<T, U, TS...>{
+    typedef typename _ComponentListUnion<typename Union<T, U>::valueTypeList, TS...>::valueTypeList valueTypeList;
+};
+
+template <typename T>
+struct _ComponentListUnion<T>{
+    typedef T valueTypeList;
+};
+
+template <typename typeList>
+struct ComponentListUnion{
+    
+};
+
+template <typename ...ComponentLists>
+struct ComponentListUnion<TypeList<ComponentLists...>>{
+    typedef typename _ComponentListUnion<ComponentLists...>::valueTypeList valueTypeList;
+};
+
+template <typename SystemTypeList>
+struct GetComponentsFromSystemTypeList{
+    
+};
+
+template <typename ...SystemTypes>
+struct GetComponentsFromSystemTypeList<TypeList<SystemTypes...>>{
+    typedef typename ComponentListUnion<typename SystemListToComponentTypeListList<SystemTypes...>::valueTypeList>::valueTypeList valueTypeList;
+};
+
+//end template programming code
+
+
 //declare
-template <typename WorldSetting>
+template <typename worldSetting>
 class World{
 public:
     void Run();
@@ -37,40 +100,24 @@ public:
     World();
     
 private:
+    typedef typename worldSetting::systemTypeList SystemTypeList;
+    typedef typename worldSetting::entitySystemTypeList EntitySystemTypeList;
+    typedef typename GetComponentsFromSystemTypeList<EntitySystemTypeList>::valueTypeList ComponentTypeList;
+    typedef bitset<ComponentTypeList::Size()> Bitset;
     void Update();
     list<System*> systems;
     IdAllocator idAllocator;
     unordered_set<int> entityIds;
     
+    unordered_map<int, Bitset> entitySignatures;
+    
     template <typename T>
     void AddSystem();
-    
-    template <typename T, typename ... TSS>
-    void _ParseEntityComponent(int EntityId,typename enable_if<sizeof...(TSS)!=0, int>::type i=0);
-    template <typename T>
-    void _ParseEntityComponent(int EntityId);
-    template <typename T>
-    void __ParseEntityComponent(int EntityId);
-    
-    
-    template <typename T>
-    struct TypeExpander{
-        
-    };
-    
-    template <typename ... TS>
-    struct TypeExpander<TypeList<TS...>>{
-    public:
-        void ParseEntityComponent(int EntityId,World &w);
-    };
     
     static IdAllocator gl_IdAllocator;
     
     //should not be changed after init, try to define with const specifier
     int id;
-    
-    template<typename ComponentTypeList>
-    friend class Universe;
     
     template <typename _WorldSetting>
     friend class SystemInitVisitor;
@@ -109,16 +156,51 @@ World<WorldSetting>* SystemInitVisitor<WorldSetting>::w = NULL;
 
 const int interval = 1000000;
 
-template < typename SystemList>
-World<SystemList>::World(){
+class ComponentVisitor2{
+public:
+    template<typename Component>
+    static int Visit(){
+        return 1;
+    }
+    static int Concatenate(int a, int b){
+        return a+b;
+    }
+};
+
+struct ComponentInitiationVisitor{
+    static int counter;
+    static int worldId;
+    template<typename Component>
+    static int Visit(){
+        ComponentManager<Component>::inst.bitSetIndex[worldId] = counter;
+        counter++;
+        return 1;
+    }
+    static int Concatenate(int a, int b){
+        return a+b;
+    }
+};
+
+
+
+template < typename WorldSetting>
+World<WorldSetting>::World(){
     idAllocator = IdAllocator();
     id = gl_IdAllocator.GetId();
     systems = list<System*>();
     entityIds = unordered_set<int>();
+//    entitySignatures = entitySignatures();
     
-    SystemInitVisitor<SystemList>::w = this;
-    SystemList::systemTypeList::template CumulateTypes<SystemInitVisitor<SystemList>,int>();
+    SystemInitVisitor<WorldSetting>::w = this;
+    SystemTypeList::template CumulateTypes<SystemInitVisitor<WorldSetting>,int>();
+    EntitySystemTypeList::template CumulateTypes<SystemInitVisitor<WorldSetting>,int>();
     
+    ComponentInitiationVisitor::counter = 0;
+    ComponentInitiationVisitor::worldId = id;
+    
+    ComponentTypeList::template CumulateTypes<ComponentInitiationVisitor, int>();
+    
+
 }
 
 template <typename SystemList>
@@ -138,39 +220,9 @@ void World<SystemList>::Update(){
 
 
 //Entity Related Functions
-template <typename SystemList>
-template <typename EntityComponentList>
-int World<SystemList>::CreateEntity(){
-    int newId = idAllocator.GetId();
-    TypeExpander<EntityComponentList> EntityComponentExpander;
-    EntityComponentExpander.ParseEntityComponent(newId,*this);
-    return newId;
-}
 
-template <typename SystemList>
-template <typename ... TS>
-void World<SystemList>::TypeExpander<TypeList<TS...>>::ParseEntityComponent(int EntityId, World &w){
-    w._ParseEntityComponent<TS...>(EntityId);
-}
 
-template <typename SystemList>
-template <typename T, typename ...TS>
-void World<SystemList>::_ParseEntityComponent(int EntityId,typename enable_if<sizeof...(TS)!=0, int>::type i){
-    __ParseEntityComponent<T>(EntityId);
-    _ParseEntityComponent<TS...>(EntityId);
-}
 
-template <typename SystemList>
-template <typename T>
-void World<SystemList>::_ParseEntityComponent(int EntityId){
-    __ParseEntityComponent<T>(EntityId);
-}
-
-template < typename SystemList>
-template <typename T>
-void World<SystemList>::__ParseEntityComponent(int EntityId){
-    ComponentManager<T>::inst.AddComponent(id, EntityId);
-}
-
+//Entity Related functions end
 
 #endif /* World_hpp */
