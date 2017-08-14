@@ -34,6 +34,16 @@ public:
     }
 };
 
+struct Debugger{
+    template<typename worldSetting>
+    static void DebugWorld(World<worldSetting> &w){
+//        cout<<TypeContainType<typename World<worldSetting>::ComponentTypeList, TypeList<PositionComponent>>::value<<endl;
+        
+
+//        cout<<_TypeContainType<TypeList<int>, TestComponent>::value::value<<endl;
+//        cout<< World<worldSetting>::ComponentTypeList::template CumulateTypes<ComponentVisitor,int>()<<endl;
+    };
+};
 
 
 int main(int argc, const char * argv[]) {
@@ -41,26 +51,15 @@ int main(int argc, const char * argv[]) {
     typedef TypeList<> SystemList;
     typedef TypeList<TestSystem,MovingSystem> EntityComponentSystemList;
     typedef WorldSetting<SystemList, EntityComponentSystemList> worldSetting;
-//    Universe<ComponentList> U = Universe<ComponentList>();
-//    auto world = U.CreateWorld<SystemList>();
-//    int e1 =  world.CreateEntity<TypeList<PositionComponent>>();
-//    int e2 =  world.CreateEntity<TypeList<PositionComponent,TestComponent>>();
-    
+
     World<worldSetting> world;
     
     cout<<"S"<<endl;
+    world.CreateEntity<TestComponent>();
+    Debugger::DebugWorld<worldSetting>(world);
     
-//    typedef TypeList<int,float,TestComponent> list1;
-//    typedef TypeList<double, unsigned int,TestComponent> list2;
-//    typedef TypeList<string, long> list3;
-//    
-////
-//    typedef Union<list1, list2>::valueTypeList U_Type;
-//    typedef Union<U_Type, list3>::valueTypeList U_Type2;
-    typedef typename TestSystem::componentTypeList ctl;
-    typedef typename MovingSystem::componentTypeList ctl2;
-//    cout<<ctl::template CumulateTypes<ComponentVisitor,int>()<<endl;
-//    cout<<ctl2::template CumulateTypes<ComponentVisitor,int>()<<endl;
+    unordered_map<int , int> map;
+//    cout<<TypeContainType<TypeList<int,float>, TypeList<float,double>>::value<<endl;
     world.Run();
     return 0;
 }

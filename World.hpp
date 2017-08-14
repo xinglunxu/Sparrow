@@ -49,9 +49,6 @@ struct SystemListToComponentTypeListList<T>{
 
 
 
-
-
-
 template <typename ...TS>
 struct _ComponentListUnion{
     
@@ -93,12 +90,6 @@ struct GetComponentsFromSystemTypeList<TypeList<SystemTypes...>>{
 //declare
 template <typename worldSetting>
 class World{
-public:
-    void Run();
-    template<typename EntityComponentList>
-    int CreateEntity();
-    World();
-    
 private:
     typedef typename worldSetting::systemTypeList SystemTypeList;
     typedef typename worldSetting::entitySystemTypeList EntitySystemTypeList;
@@ -121,6 +112,13 @@ private:
     
     template <typename _WorldSetting>
     friend class SystemInitVisitor;
+    friend struct Debugger;
+
+public:
+    void Run();
+    template<typename ...Components>
+    int CreateEntity(typename std::enable_if<TypeContainType<ComponentTypeList, TypeList<Components...>>::value, int>::type i=0);
+    World();
 };
 
 
@@ -220,8 +218,33 @@ void World<SystemList>::Update(){
 
 
 //Entity Related Functions
+template<typename BitsetType>
+struct EntityInitiationVisitor{
+    static int worldId;
+    template<typename Component>
+    static BitsetType Visit(){
+        BitsetType bs;
+        bs.set(ComponentManager<Component>::inst.bitSetIndex[worldId]);
+        return bs;
+    }
+    static BitsetType Concatenate(BitsetType a, BitsetType b){
+        return a | b;
+    }
+};
+
+template <typename BitsetType>
+int EntityInitiationVisitor<BitsetType>::worldId = 0;
 
 
+template <typename worldSetting>
+template<typename ...Components>
+int World<worldSetting>::CreateEntity(typename std::enable_if<TypeContainType<ComponentTypeList, TypeList<Components...>>::value, int>::type i){
+    int entityId = idAllocator.GetId();
+    Bitset bs = TypeList<Components...>::template CumulateTypes<EntityInitiationVisitor<Bitset>, Bitset>();
+    entityIds.insert(entityId);
+    entitySignatures[entityId] = bs;
+    return entityId;
+}
 
 //Entity Related functions end
 

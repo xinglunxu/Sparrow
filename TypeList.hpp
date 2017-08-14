@@ -75,6 +75,22 @@ constexpr int TypeList<TS...>::Size(){
 
 //template programming utitly------------------------------------
 
+/// base template programming
+template<typename bType1, typename bType2>
+struct Or: true_type{};
+
+template<>
+struct Or<false_type, false_type> : false_type{};
+
+
+template<bool b1, bool b2>
+struct And:false_type{};
+
+template <>
+struct And<true, true>:true_type{};
+
+///
+
 ///if type is contained inside container class
 template < typename Tp, typename... List >
 struct contains : std::true_type {};
@@ -85,6 +101,37 @@ struct contains<Tp, Head, Rest...>
 
 template < typename Tp >
 struct contains<Tp> : std::false_type {};
+
+
+template <typename List, typename T>
+struct ListContains{};
+
+template <typename T, typename ...TS>
+struct ListContains<TypeList<TS...>, T> : contains<T, TS...>{};
+///
+
+
+///if typelist is contained inside another one
+template <typename Parent, typename ...TS>
+struct _TypeContainType{};
+
+template <typename Parent, typename T, typename ...TS>
+struct _TypeContainType<Parent, T, TS...>{
+    typedef And<_TypeContainType<Parent, T>::value::value,  _TypeContainType<Parent, TS...>::value::value> value;
+};
+
+template <typename Parent, typename T>
+struct _TypeContainType<Parent, T>{
+    typedef ListContains<Parent, T> value;
+};
+
+
+template <typename Parent, typename Child>
+struct TypeContainType{};
+
+template <typename Parent, typename ...TS>
+struct TypeContainType<Parent, TypeList<TS...>>:_TypeContainType<Parent, TS...>::value{};
+
 ///
 
 template <typename T, typename ...TS>

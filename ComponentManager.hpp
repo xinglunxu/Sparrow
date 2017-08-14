@@ -33,6 +33,11 @@ private:
     friend class World;
     
     friend class ComponentInitiationVisitor;
+    
+    template<typename BitsetType>
+    friend struct EntityInitiationVisitor;
+    
+    friend struct Debugger;
 public:
     static ComponentManager inst;
 //    int bitSetIndex;
