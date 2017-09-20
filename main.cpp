@@ -20,10 +20,11 @@
 #include <typeinfo>
 #include <typeindex>
 #include "WorldSetting.hpp"
+#include "BaseSystem.hpp"
 
 using namespace std;
 
-class ComponentVisitor{
+class _ComponentVisitor{
 public:
     template<typename Component>
     static int Visit(){
@@ -34,32 +35,39 @@ public:
     }
 };
 
+struct ComponentVisitor{
+public:
+    template<typename Component>
+    int Visit(){
+        return 1;
+    }
+    int Concatenate(int a, int b){
+        return a+b;
+    }
+};
+
 struct Debugger{
     template<typename worldSetting>
     static void DebugWorld(World<worldSetting> &w){
-//        cout<<TypeContainType<typename World<worldSetting>::ComponentTypeList, TypeList<PositionComponent>>::value<<endl;
+        int entity = w.template CreateEntity<TestComponent,PositionComponent>();
+        auto bs = w.entitySignatures[entity];
+        PositionComponent* p = (*(ComponentManager<PositionComponent>::inst.datas[w.id]))[entity];
+        p->x=10;
         
-
-//        cout<<_TypeContainType<TypeList<int>, TestComponent>::value::value<<endl;
-//        cout<< World<worldSetting>::ComponentTypeList::template CumulateTypes<ComponentVisitor,int>()<<endl;
     };
 };
 
 
 int main(int argc, const char * argv[]) {
     typedef TypeList<PositionComponent, TestComponent> ComponentList;
-    typedef TypeList<> SystemList;
+    typedef TypeList<BaseSystem> SystemList;
     typedef TypeList<TestSystem,MovingSystem> EntityComponentSystemList;
     typedef WorldSetting<SystemList, EntityComponentSystemList> worldSetting;
 
     World<worldSetting> world;
     
-    cout<<"S"<<endl;
-    world.CreateEntity<TestComponent>();
+    ComponentVisitor cv;
     Debugger::DebugWorld<worldSetting>(world);
-    
-    unordered_map<int , int> map;
-//    cout<<TypeContainType<TypeList<int,float>, TypeList<float,double>>::value<<endl;
     world.Run();
     return 0;
 }

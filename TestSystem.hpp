@@ -14,9 +14,14 @@
 #include "TestComponent.hpp"
 #include "PositionComponent.hpp"
 
+using namespace std;
+
 class TestSystem : public EntityComponentSystem<TestComponent, PositionComponent>{
 public:
-    void Update(int entityId) override;
+    void Update() override;
+    TestSystem(int worldId, unordered_set<int>* es):EntityComponentSystem<TestComponent, PositionComponent>(worldId,es){
+        
+    }
 };
 
 #endif /* TestSystem_hpp */

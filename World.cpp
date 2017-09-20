@@ -16,7 +16,3 @@
 //template<typename WorldSetting>
 //int* Test<WorldSetting>::i = new int(1);
 
-int ComponentInitiationVisitor::counter = 0;
-
-int ComponentInitiationVisitor::worldId = 0;
-

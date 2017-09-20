@@ -10,16 +10,17 @@
 #define System_hpp
 
 #include <stdio.h>
-#include "World.hpp"
-
-using namespace std;
+#include <iostream>
 
 class System{
 public:
-    virtual void Update(int entityId)=0;
+    virtual void Update()=0;
     int worldId;
-protected:
-//    World w;
+    System(int worldId){
+        this->worldId = worldId;
+    }
+private:
+    System();
 };
 
 

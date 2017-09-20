@@ -29,15 +29,21 @@ private:
     bool Contain(int worldId, int i);
     void AddComponent(int worldId, int i);
     
+    DataType* GetComponent(int worldId, int entityId);
+    
     template <typename SystemList>
     friend class World;
     
     friend class ComponentInitiationVisitor;
     
     template<typename BitsetType>
-    friend struct EntityInitiationVisitor;
+    friend struct GetBisetVisitor;
     
     friend struct Debugger;
+    friend struct EntityComponentInitiationVisitor;
+    
+    template<typename ... ComponentTypes>
+    friend class EntityComponentSystem;
 public:
     static ComponentManager inst;
 //    int bitSetIndex;
@@ -76,6 +82,11 @@ ComponentManager<T>::ComponentManager(){
 template <typename T>
 void ComponentManager<T>::AddWorld(int worldId){
     datas[worldId] = new unordered_map<int, T*>();
+}
+
+template <typename T>
+T* ComponentManager<T>::GetComponent(int worldId, int entityId){
+    return (*(datas[worldId]))[entityId];
 }
 
 

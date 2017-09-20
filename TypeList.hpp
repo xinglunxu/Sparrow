@@ -19,10 +19,11 @@ public:
     template<typename TypeVisitor, typename CumulativeType>
     static CumulativeType CumulateTypes();
     
-    template<typename TypeVisitor, typename CumulativeType>
-    constexpr static CumulativeType ConstCumulateTypes();
-    
     static constexpr int Size();
+    
+    
+    template<typename TypeVisitor, typename CumulativeType>
+    static CumulativeType Visit(TypeVisitor visitor);
     
 private:
     template<typename TypeVisitor, typename CumulativeType, typename T, typename ...Ts>
@@ -33,7 +34,43 @@ private:
     
     template<typename TypeVisitor, typename CumulativeType>
     static CumulativeType _CumulateTypes();
+    
+    ///
+    template<typename TypeVisitor, typename CumulativeType, typename T, typename ...Ts>
+    static CumulativeType _Visit(TypeVisitor visitor, typename enable_if<sizeof...(Ts)!=0, int>::type i=0);
+    
+    template<typename TypeVisitor, typename CumulativeType, typename T>
+    static CumulativeType _Visit(TypeVisitor visitor);
+    
+    template<typename TypeVisitor, typename CumulativeType>
+    static CumulativeType _Visit(TypeVisitor visitor);
 };
+
+template<typename ... TS>
+template<typename TypeVisitor, typename CumulativeType>
+CumulativeType TypeList<TS...>::Visit(TypeVisitor visitor){
+    return _Visit<TypeVisitor, CumulativeType, TS...>(visitor);
+}
+
+template<typename ... TS>
+template<typename TypeVisitor, typename CumulativeType>
+CumulativeType TypeList<TS...>::_Visit(TypeVisitor visitor){
+    return CumulativeType();
+}
+
+template<typename ... TS>
+template<typename TypeVisitor, typename CumulativeType, typename T>
+CumulativeType TypeList<TS...>::_Visit(TypeVisitor visitor){
+    return visitor.template Visit<T>();
+}
+
+template<typename ... TS>
+template<typename TypeVisitor, typename CumulativeType, typename T, typename ...Ts>
+CumulativeType TypeList<TS...>::_Visit(TypeVisitor visitor, typename enable_if<sizeof...(Ts)!=0, int>::type i){
+    return visitor.Concatenate(visitor.template Visit<T>(), _Visit<TypeVisitor, CumulativeType, Ts...>(visitor));
+}
+
+
 
 template<typename ... TS>
 template <typename TypeVisitor, typename CumulativeType>
@@ -57,14 +94,6 @@ template<typename ... TS>
 template<typename TypeVisitor, typename CumulativeType>
 CumulativeType TypeList<TS...>::_CumulateTypes(){
     return CumulativeType();
-}
-
-
-
-template<typename ... TS>
-template <typename TypeVisitor, typename CumulativeType>
-constexpr CumulativeType TypeList<TS...>::ConstCumulateTypes(){
-    return _CumulateTypes<TypeVisitor, CumulativeType, TS...>();
 }
 
 

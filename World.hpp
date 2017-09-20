@@ -84,6 +84,25 @@ struct GetComponentsFromSystemTypeList<TypeList<SystemTypes...>>{
     typedef typename ComponentListUnion<typename SystemListToComponentTypeListList<SystemTypes...>::valueTypeList>::valueTypeList valueTypeList;
 };
 
+template<typename BitsetType>
+struct GetBisetVisitor{
+    int worldId;
+    template<typename Component>
+    BitsetType Visit(){
+        BitsetType bs;
+        bs.set(ComponentManager<Component>::inst.bitSetIndex[worldId]);
+        return bs;
+    }
+    BitsetType Concatenate(BitsetType a, BitsetType b){
+        return a | b;
+    }
+    GetBisetVisitor(int worldId){
+        this->worldId = worldId;
+    }
+private:
+    GetBisetVisitor();
+};
+
 //end template programming code
 
 
@@ -100,10 +119,7 @@ private:
     IdAllocator idAllocator;
     unordered_set<int> entityIds;
     
-    unordered_map<int, Bitset> entitySignatures;
-    
-    template <typename T>
-    void AddSystem();
+    unordered_map<Bitset, unordered_set<int>*> entitiesForSystems;
     
     static IdAllocator gl_IdAllocator;
     
@@ -113,11 +129,17 @@ private:
     template <typename _WorldSetting>
     friend class SystemInitVisitor;
     friend struct Debugger;
-
+    
+    template <typename _worldSetting, typename _Bitset>
+    friend class EntityComponentSystemInitVisitor;
 public:
     void Run();
     template<typename ...Components>
     int CreateEntity(typename std::enable_if<TypeContainType<ComponentTypeList, TypeList<Components...>>::value, int>::type i=0);
+    
+    template <typename T>
+    T* GetComponentFromEntity(int i);
+    
     World();
 };
 
@@ -135,21 +157,55 @@ IdAllocator World<SystemList>::gl_IdAllocator = IdAllocator();
 template <typename WorldSetting>
 class SystemInitVisitor{
 public:
-    static World<WorldSetting>* w;
+    World<WorldSetting>* w;
     template<typename System>
-    static int Visit(){
-        System* system = new System();
+    int Visit(){
+        System* system = new System(w->id);
         system->worldId = w->id;
         w->systems.insert(w->systems.end(), system);
         return 0;
     }
-    static int Concatenate(int a, int b){
+    int Concatenate(int a, int b){
         return 0;
     }
+    SystemInitVisitor(World<WorldSetting>* w){
+        this->w = w;
+    }
+private:
+    SystemInitVisitor();
 };
 
-template<typename WorldSetting>
-World<WorldSetting>* SystemInitVisitor<WorldSetting>::w = NULL;
+template <typename WorldSetting, typename Bitset>
+class EntityComponentSystemInitVisitor{
+public:
+    World<WorldSetting>* w;
+    template<typename SystemType>
+    int Visit(){
+        GetBisetVisitor<Bitset> visitor(w->id);
+        Bitset bs = SystemType::componentTypeList::template Visit<GetBisetVisitor<Bitset>, Bitset>(visitor);
+        if(w->entitiesForSystems.find(bs) == w->entitiesForSystems.end()){
+            w->entitiesForSystems[bs] = new unordered_set<int>();
+        }
+        SystemType* system = new SystemType(w->id, w->entitiesForSystems[bs]);
+//        list<System*>* ecSystems =w->entityComponentSystems[bs];
+//        if(ecSystems==NULL){
+//            w->entityComponentSystems[bs] = new list<System*>();
+//            ecSystems =w->entityComponentSystems[bs];
+//        }
+//        ecSystems->push_front(system);
+        w->systems.push_front(system);
+        return 0;
+    }
+    int Concatenate(int a, int b){
+        return 0;
+    }
+    EntityComponentSystemInitVisitor(World<WorldSetting>* w){
+        this->w = w;
+    }
+private:
+    EntityComponentSystemInitVisitor();
+};
+
 //add system end
 
 const int interval = 1000000;
@@ -166,17 +222,24 @@ public:
 };
 
 struct ComponentInitiationVisitor{
-    static int counter;
-    static int worldId;
+    int counter;
+    int worldId;
     template<typename Component>
-    static int Visit(){
+    int Visit(){
         ComponentManager<Component>::inst.bitSetIndex[worldId] = counter;
+        ComponentManager<Component>::inst.AddWorld(worldId);
         counter++;
         return 1;
     }
     static int Concatenate(int a, int b){
         return a+b;
     }
+    ComponentInitiationVisitor(int worldId){
+        counter = 0;
+        this->worldId = worldId;
+    }
+private:
+    ComponentInitiationVisitor();
 };
 
 
@@ -187,18 +250,16 @@ World<WorldSetting>::World(){
     id = gl_IdAllocator.GetId();
     systems = list<System*>();
     entityIds = unordered_set<int>();
-//    entitySignatures = entitySignatures();
     
-    SystemInitVisitor<WorldSetting>::w = this;
-    SystemTypeList::template CumulateTypes<SystemInitVisitor<WorldSetting>,int>();
-    EntitySystemTypeList::template CumulateTypes<SystemInitVisitor<WorldSetting>,int>();
+    SystemInitVisitor<WorldSetting> siv(this);
+    SystemTypeList::template Visit<SystemInitVisitor<WorldSetting>,int>(siv);
     
-    ComponentInitiationVisitor::counter = 0;
-    ComponentInitiationVisitor::worldId = id;
+    EntityComponentSystemInitVisitor<WorldSetting, Bitset> ecsiv(this);
+    EntitySystemTypeList::template Visit<EntityComponentSystemInitVisitor<WorldSetting, Bitset>,int>(ecsiv);
     
-    ComponentTypeList::template CumulateTypes<ComponentInitiationVisitor, int>();
+    ComponentInitiationVisitor civ(id);
     
-
+    ComponentTypeList::template Visit<ComponentInitiationVisitor, int>(civ);
 }
 
 template <typename SystemList>
@@ -211,39 +272,82 @@ void World<SystemList>::Run(){
 
 template <typename SystemList>
 void World<SystemList>::Update(){
-//    for(auto it = systems.begin(); it!=systems.end();it++){
-//        (*it)->Update();
+    for(auto it = systems.begin(); it!=systems.end(); it++){
+        (*it)->Update();
+    }
+    
+//    for(auto it = entityComponentSystems.begin(); it!=entityComponentSystems.end(); it++){
+//        list<System*>* _list = it->second;
+//        
+//        for(auto _it = _list->begin(); _it!=_list->end(); _it++){
+//            System* s = *_it;
+//            s->Update();
+//        }
 //    }
 }
 
 
 //Entity Related Functions
-template<typename BitsetType>
-struct EntityInitiationVisitor{
-    static int worldId;
-    template<typename Component>
-    static BitsetType Visit(){
-        BitsetType bs;
-        bs.set(ComponentManager<Component>::inst.bitSetIndex[worldId]);
-        return bs;
-    }
-    static BitsetType Concatenate(BitsetType a, BitsetType b){
-        return a | b;
-    }
-};
 
-template <typename BitsetType>
-int EntityInitiationVisitor<BitsetType>::worldId = 0;
+struct EntityComponentInitiationVisitor{
+    int worldId;
+    int entityId;
+    template<typename Component>
+    int Visit(){
+        ComponentManager<Component>::inst.AddComponent(worldId, entityId);
+        return 0;
+    }
+    int Concatenate(int a, int b){
+        return 0;
+    }
+    EntityComponentInitiationVisitor(int worldId, int entityId){
+        this->worldId = worldId;
+        this->entityId = entityId;
+    }
+private:
+    EntityComponentInitiationVisitor();
+};
 
 
 template <typename worldSetting>
 template<typename ...Components>
 int World<worldSetting>::CreateEntity(typename std::enable_if<TypeContainType<ComponentTypeList, TypeList<Components...>>::value, int>::type i){
     int entityId = idAllocator.GetId();
-    Bitset bs = TypeList<Components...>::template CumulateTypes<EntityInitiationVisitor<Bitset>, Bitset>();
+    GetBisetVisitor<Bitset> ei(id);
+
+    Bitset bs = TypeList<Components...>::template Visit<GetBisetVisitor<Bitset>, Bitset>(ei);
     entityIds.insert(entityId);
-    entitySignatures[entityId] = bs;
+    
+    EntityComponentInitiationVisitor eciv(id, entityId);
+    
+    TypeList<Components...>::template Visit<EntityComponentInitiationVisitor, int>(eciv);
+    
+//    for(auto it = entityComponentSystems.begin(); it!=entityComponentSystems.end(); it++){
+//        Bitset systemBs = it->first;
+//        if(systemBs || bs == bs){
+//            list<System*>* systemList = it->second;
+//            
+//            for(auto it2 = systemList->begin(); it2!=systemList->end(); it2++){
+//                
+//            }
+//        }
+//    }
+    
+    for(auto it = entitiesForSystems.begin(); it!=entitiesForSystems.end(); it++){
+        Bitset systemBs = it->first;
+        if((systemBs | bs) == bs){
+            unordered_set<int>* entitySet = it->second;
+            entitySet->insert(entityId);
+        }
+    }
+    
     return entityId;
+}
+
+template <typename worldSetting>
+template <typename T>
+T* World<worldSetting>::GetComponentFromEntity(int i){
+    return ComponentManager<T>::inst.GetComponent(id,i);
 }
 
 //Entity Related functions end

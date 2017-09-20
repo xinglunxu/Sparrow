@@ -16,7 +16,10 @@
 
 class MovingSystem: public EntityComponentSystem<PositionComponent>{
 public:
-    void Update(int entityId) override;
+    void Update() override;
+    MovingSystem(int worldId, unordered_set<int>* entities):EntityComponentSystem<PositionComponent>(worldId, entities){
+        
+    }
 };
 
 #endif /* MovingSystem_hpp */
